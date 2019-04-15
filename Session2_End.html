@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+
+<head></head>
+<style>
+    div.tooltip {	
+        position: absolute;			
+        text-align: center;			
+        width: 120px;					
+        height: 58px;					
+        padding: 2px;				
+        font: 12px sans-serif;		
+        background: lightsteelblue;	
+        border: 0px;		
+        border-radius: 8px;			
+        pointer-events: none;			
+    }
+    div.panel {	
+        float: right;			
+        text-align: center;			
+        width: 120px;					
+        height: 58px;					
+        padding: 2px;				
+        font: 12px sans-serif;		
+        background: lightsteelblue;	
+        border: 0px;		
+        border-radius: 8px;			
+        pointer-events: none;			
+    }
+</style>
+
+<body>
+    <div> <button onclick = "next()"> Next </button></div>
+    <script src="../../lib/d3.js"></script>
+    <script src="../../lib/d3-selection-multi.v1.js"></script>
+    <script type="text/javascript">
+        //Define the div for the tooltip
+        var tooltip = d3.select("body").append("div")
+        .attr("class","panel")
+        .style("opacity",0);
+        
+        var panel = d3.select("body").append("div")
+                    .attr("class","tooltip")
+                    .style("opacity",0);
+        var selected = null;
+        
+        items =[ 
+        { Country: "USA", Year: 2015, Value: 20, X:20, Y:20, Color:'blue' },
+        { Country: "USA", Year: 2016, Value: 40,  X:40, Y:20, Color:'blue' },
+        { Country: "Canada", Year: 2016, Value: 15,  X:20, Y:80, Color:'red' },
+        { Country: "Canada", Year: 2017, Value: 25,  X:40, Y:60, Color:'red'  },
+        ];
+        var svgWidth = 800,
+            svgHeight = 600;
+        var svg = d3.select('body')
+            .append('svg')
+            .attrs({
+                width: svgWidth,
+                height: svgHeight
+            });
+        svg.on("mousedown", function(d){
+            if (selected != null){
+                selected.attr("stroke-width",1);
+                selected = null;
+                panel.transition().duration(500).style("opacity",0);
+            }
+        });
+    
+        render(items);
+
+        function render(theItems){
+          
+            console.log(theItems)
+
+            var select = svg.selectAll("circle")
+                .data(theItems, function(d) { return d.Country; });
+
+            var transitionDuration = 1000;
+
+            console.log('enter starting');
+            select
+                .enter()
+                .append("circle")
+                .on("mousemove", function (d){ 
+                 console.log(d3.event);
+                 //console.log(d3.event.pageX, d3.event.pageY)
+                 })
+                 .on("mouseover", function (d) { 
+                     console.log("mouseover");
+                     tooltip.transition()
+                        .duration(200)
+                        .style("opacity", .9);
+  //                   tooltip.html(
+  //                   "<div>Country: " +d.Country + "</div>" +
+  //                   "<div>Value: " +d.Value + "</div>" +
+  //                   "<div>X: " +d.X + "</div>" +
+  //                   "<div>Y: " +d.Y + "</div>" 
+                    
+  //                   )
+                     tooltip.style("left", (d3.event.pageX)+"px")
+                        .style("top", (d3.event.pageY -28)+"px");
+                    styleDetailItem(tooltip,d);
+                 
+                 })
+                 .on("mouseout", function (d) { 
+                     console.log("mouseout");
+                     tooltip.transition()
+                     .duration(500)
+                     .style("opacity",0);
+                     })
+                 .on("mousedown", function (d) { console.log("mousedown");
+                   var clicked = d3.select(this);
+                   clicked.attr("stroke-width", 5);
+                   if (selected != null && selected != clicked){
+                       selected.attr("stroke-width",1);
+                   }
+                   selected = clicked;
+                   d3.event.cancelBubble = true;
+                   styleDetailItem(panel,d);
+                   panel.transition().duration(500).style("opacity",1)
+                   })
+
+                 .on("mouseup", function (d) { console.log("mouseup");})
+                 .on("click", function (d) { console.log("mouseclick");})
+                 .on("dbclick", function (d) { console.log("dbclick");})
+                .each(function(d, i) { console.log(d); })
+                .attrs({
+                    cx: function(d, i) { return d.X *5;},
+                    cy: function(d, i) { return d.Y *5;},
+                  //  width: function(d) { return d.Value; }, 
+                  //  height: function(d) { return d.Value; }, 
+                    r: function(d) { return d.Value *10; },
+                    fill: function(d) { return d.Color; },
+                    stroke: 'black',
+                    opacity: 1
+                })
+                .transition()
+                .duration(transitionDuration)
+                .ease(d3.easeLinear)
+                .attrs({
+                    cx: function(d, i) { return d.X *5;},
+                    cy: function(d, i) { return d.Y *5;},
+                  //  width: function(d) { return d.Value; }, 
+                  //  height: function(d) { return d.Value; }, 
+                    r: function(d) { return d.Value; },
+                    fill: function(d) { return d.Color; },
+                    stroke: 'black',
+                    opacity: 1
+                });
+            console.log('enter finished');
+
+            console.log('update starting');
+            select 
+                .each(function (d)
+                {
+                    console.log(d);
+                    console.log(this);
+                })
+                .transition()
+                .duration(transitionDuration)
+                .ease(d3.easeLinear)
+                .attrs({
+                    r: function(d) { return d.Value;},
+                    cx: function (d) { return d.X*5;},
+                    cy: function(d) { return d.Y * 5;}
+
+                });
+            
+            console.log('exit starting');
+            select
+                  .exit()
+                  .each(function (d,i) {
+                    console.log(d);
+                    console.log(this);
+                })
+                .transition()
+                .duration(transitionDuration)
+                .ease(d3.easeLinear)
+                .attrs({
+                    opacity:0,
+                    r: function (d) {
+                        return d.Value *10
+                    }
+
+                });
+             }
+            function next() {
+                console.log("next");
+                currentYear ++;
+                render(items.filter(function (item){ return item.Year === currentYear}));
+            }
+
+            function styleDetailItem(div,d){
+
+  //change tooltip to div                    
+                    div.html(
+                     "<div>Country: " +d.Country + "</div>" +
+                     "<div>Value: " +d.Value + "</div>" +
+                     "<div>X: " +d.X + "</div>" +
+                     "<div>Y: " +d.Y + "</div>" )  ;             
+            }
+         </script>           
+         
+</body>
+
+</html>
